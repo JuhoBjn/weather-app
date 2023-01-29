@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { StyleSheet, Text, View, FlatList, Alert } from "react-native";
+import { StyleSheet, Text, View, FlatList, Alert, Button } from "react-native";
 import { API_KEY } from "@env";
+import * as Location from "expo-location";
 import WeatherListItem from "../components/WeatherListItem";
 import LocationInput from "../components/LocationInput";
 
@@ -28,6 +29,36 @@ const WeatherForecast = ({ navigation }) => {
     }
   };
 
+  const fetchLocationForecast = async () => {
+    let { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      setErrorMsg("Permission to access location was denied");
+      return;
+    }
+
+    // Get the device coordinates.
+    let location;
+    try {
+      location = await Location.getCurrentPositionAsync();
+    } catch (error) {
+      console.log(error);
+      return;
+    }
+
+    // Fetch the weather forecast for the location.
+    try {
+      const forecastResponse = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${location.coords.latitude}&lon=${location.coords.longitude}&appid=${API_KEY}`
+      );
+      const forecastData = await forecastResponse.json();
+      setWeatherForecast(forecastData);
+    } catch (error) {
+      console.log(error);
+      Alert.alert("Could not find weather for your current location.");
+      return;
+    }
+  };
+
   useEffect(() => {
     fetchWeatherForecast();
   }, []);
@@ -49,6 +80,12 @@ const WeatherForecast = ({ navigation }) => {
               icon={item.weather[0].icon}
             />
           )}
+        />
+      </View>
+      <View>
+        <Button
+          onPress={fetchLocationForecast}
+          title='Fetch for current location'
         />
       </View>
       <View style={forecastStyles.locationInputView}>
