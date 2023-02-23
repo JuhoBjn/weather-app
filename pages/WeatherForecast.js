@@ -1,15 +1,23 @@
 import { useState, useEffect } from "react";
-import { StyleSheet, Text, View, FlatList, Alert, Button } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  FlatList,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { API_KEY } from "@env";
 import * as Location from "expo-location";
 import WeatherListItem from "../components/WeatherListItem";
 import LocationInput from "../components/LocationInput";
 
 const WeatherForecast = ({ navigation }) => {
+  const [locationName, setLocationName] = useState("Inari");
   const [weatherForecast, setWeatherForecast] = useState({
     city: { name: "Fetching" },
   });
-  const [locationName, setLocationName] = useState("Tampere");
 
   const fetchWeatherForecast = async () => {
     console.log(`Fetching weather forecast for ${locationName}`);
@@ -24,7 +32,7 @@ const WeatherForecast = ({ navigation }) => {
       setWeatherForecast(forecastData);
     } catch (error) {
       console.log(error);
-      Alert.alert("Could not find weather for location. Please try again.");
+      Alert.alert(`Failed to fetch weather: ${error.message}`);
       return;
     }
   };
@@ -48,7 +56,7 @@ const WeatherForecast = ({ navigation }) => {
     // Fetch the weather forecast for the location.
     try {
       const forecastResponse = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?lat=${location.coords.latitude}&lon=${location.coords.longitude}&appid=${API_KEY}`
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${location.coords.latitude}&lon=${location.coords.longitude}&units=metric&appid=${API_KEY}`
       );
       const forecastData = await forecastResponse.json();
       setWeatherForecast(forecastData);
@@ -64,38 +72,40 @@ const WeatherForecast = ({ navigation }) => {
   }, []);
 
   return (
-    <View style={forecastStyles.container}>
-      <View style={forecastStyles.locationView}>
-        <Text style={forecastStyles.location}>{weatherForecast.city.name}</Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={forecastStyles.container}
+    >
+      <View style={forecastStyles.container}>
+        <View style={forecastStyles.locationView}>
+          <Text style={forecastStyles.location}>
+            {weatherForecast.city.name}
+          </Text>
+        </View>
+        <View style={forecastStyles.flatListView}>
+          <FlatList
+            data={weatherForecast.list}
+            renderItem={({ item }) => (
+              <WeatherListItem
+                time={item.dt_txt}
+                description={item.weather[0].main}
+                temperature={item.main.temp}
+                windSpeed={item.wind.speed}
+                icon={item.weather[0].icon}
+              />
+            )}
+          />
+        </View>
+        <View style={forecastStyles.locationInputView}>
+          <LocationInput
+            locationName={locationName}
+            setLocationName={setLocationName}
+            fetchWeather={fetchWeatherForecast}
+            fetchWeatherCurrentLocation={fetchLocationForecast}
+          />
+        </View>
       </View>
-      <View style={forecastStyles.flatListView}>
-        <FlatList
-          data={weatherForecast.list}
-          renderItem={({ item }) => (
-            <WeatherListItem
-              time={item.dt_txt}
-              description={item.weather[0].main}
-              temperature={item.main.temp}
-              windSpeed={item.wind.speed}
-              icon={item.weather[0].icon}
-            />
-          )}
-        />
-      </View>
-      <View>
-        <Button
-          onPress={fetchLocationForecast}
-          title='Fetch for current location'
-        />
-      </View>
-      <View style={forecastStyles.locationInputView}>
-        <LocationInput
-          locationName={locationName}
-          setLocationName={setLocationName}
-          fetchWeather={fetchWeatherForecast}
-        />
-      </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -114,10 +124,10 @@ const forecastStyles = StyleSheet.create({
     textAlign: "center",
   },
   flatListView: {
-    flex: 7.5,
+    flex: 6.5,
   },
   locationInputView: {
-    flex: 2,
+    flex: 3,
   },
 });
 

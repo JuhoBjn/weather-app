@@ -1,6 +1,11 @@
 import { StyleSheet, TextInput, Button, View } from "react-native";
 
-const WeatherInput = ({ locationName, setLocationName, fetchWeather }) => {
+const WeatherInput = ({
+  locationName,
+  setLocationName,
+  fetchWeather,
+  fetchWeatherCurrentLocation,
+}) => {
   return (
     <View style={locationInputStyles.container}>
       <View style={locationInputStyles.textInputView}>
@@ -15,6 +20,12 @@ const WeatherInput = ({ locationName, setLocationName, fetchWeather }) => {
       </View>
       <View style={locationInputStyles.buttonView}>
         <Button onPress={fetchWeather} title={"Fetch weather"}></Button>
+      </View>
+      <View style={locationInputStyles.buttonView}>
+        <Button
+          onPress={fetchWeatherCurrentLocation}
+          title='Fetch for current location'
+        />
       </View>
     </View>
   );
@@ -42,7 +53,7 @@ const locationInputStyles = StyleSheet.create({
     fontSize: 20,
   },
   buttonView: {
-    flex: 1,
+    flex: 0.5,
     justifyContent: "flex-start",
   },
 });
